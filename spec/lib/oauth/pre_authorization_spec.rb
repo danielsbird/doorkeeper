@@ -243,9 +243,9 @@ RSpec.describe Doorkeeper::OAuth::PreAuthorization do
     expect(pre_auth).not_to be_authorizable
   end
 
-  it "requires a redirect uri" do
+  it "accepts a nil redirect uri" do
     attributes[:redirect_uri] = nil
-    expect(pre_auth).not_to be_authorizable
+    expect(pre_auth).to be_authorizable
   end
 
   context "when resource_owner cannot access client application" do
