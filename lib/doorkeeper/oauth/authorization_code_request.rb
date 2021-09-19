@@ -57,7 +57,7 @@ module Doorkeeper
       def validate_params
         @missing_param = if grant&.uses_pkce? && code_verifier.blank?
                            :code_verifier
-                         elsif redirect_uri.blank?
+                         elsif grant&.redirect_uri.present? && redirect_uri.blank?
                            :redirect_uri
                          end
 
@@ -75,9 +75,20 @@ module Doorkeeper
       end
 
       def validate_redirect_uri
+        # 4.1.3.  Access Token Request
+        #   redirect_uri
+        #     REQUIRED, if the "redirect_uri" parameter was included in the
+        #     authorization request as described in Section 4.1.1, and their
+        #     values MUST be identical.
+        #
+        # @see https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.3
+        if redirect_uri.blank? && grant.redirect_uri.blank?
+          return true
+        end
+
         Helpers::URIChecker.valid_for_authorization?(
           redirect_uri,
-          grant.redirect_uri,
+          grant.redirect_uri.present? ? grant.redirect_uri : client.redirect_uri,
         )
       end
 

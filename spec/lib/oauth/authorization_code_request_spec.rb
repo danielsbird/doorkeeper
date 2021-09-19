@@ -65,19 +65,6 @@ RSpec.describe Doorkeeper::OAuth::AuthorizationCodeRequest do
     expect(request.error).to eq(:invalid_client)
   end
 
-  it "requires the redirect_uri" do
-    request = described_class.new(server, grant, nil, params.except(:redirect_uri))
-    request.validate
-    expect(request.error).to eq(:invalid_request)
-    expect(request.missing_param).to eq(:redirect_uri)
-  end
-
-  it "matches the redirect_uri with grant's one" do
-    request = described_class.new(server, grant, client, params.merge(redirect_uri: "http://other.com"))
-    request.validate
-    expect(request.error).to eq(:invalid_grant)
-  end
-
   it "matches the client with grant's one" do
     other_client = FactoryBot.create :application
     request = described_class.new(server, grant, other_client, params)
@@ -166,6 +153,48 @@ RSpec.describe Doorkeeper::OAuth::AuthorizationCodeRequest do
       allow(grant).to receive(:redirect_uri) { redirect_uri }
       request.validate
       expect(request.error).to eq(nil)
+    end
+  end
+
+  context "when the grant's redirect_uri is present" do
+    it "requires the redirect_uri" do
+      request = described_class.new(server, grant, client, define_params(redirect_uri: nil))
+      request.validate
+      expect(request.error).to eq(:invalid_request)
+      expect(request.missing_param).to eq(:redirect_uri)
+    end
+
+    it "matches the redirect_uri with grant's one" do
+      request = described_class.new(server, grant, client, params.merge(redirect_uri: "http://other.com"))
+      request.validate
+      expect(request.error).to eq(:invalid_grant)
+    end
+  end
+
+  context "when the grant's redirect_uri is blank" do
+    let(:grant) do
+      FactoryBot.create :access_grant,
+                        redirect_uri: nil,
+                        resource_owner_id: resource_owner.id,
+                        resource_owner_type: resource_owner.class.name
+    end
+
+    it "is valid with a blank redirect_uri" do
+      request = described_class.new(server, grant, grant.application, params.except(:redirect_uri))
+      request.valid?
+      expect(request.valid?).to eq(true)
+    end
+
+    it "is valid if the redirect_uri matches the client's redirect_uri" do
+      request = described_class.new(server, grant, grant.application, params)
+      request.valid?
+      expect(request.valid?).to eq(true)
+    end
+
+    it "is invalid if the redirect_uri does not match the client's redirect_uri" do
+      request = described_class.new(server, grant, grant.application, params.merge(redirect_uri: 'http://other.com'))
+      request.validate
+      expect(request.error).to eq(:invalid_grant)
     end
   end
 
