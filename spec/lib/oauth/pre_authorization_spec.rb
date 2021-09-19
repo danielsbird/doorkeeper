@@ -248,6 +248,21 @@ RSpec.describe Doorkeeper::OAuth::PreAuthorization do
     expect(pre_auth).to be_authorizable
   end
 
+  context "when client does not have a redirect_uri" do
+    before do
+      Doorkeeper.configure do
+        allow_blank_redirect_uri true
+      end
+    end
+
+    let(:application) { FactoryBot.create(:application, redirect_uri: nil) }
+
+    it "requires a redirect_uri" do
+      attributes[:redirect_uri] = nil
+      expect(pre_auth).not_to be_authorizable
+    end
+  end
+
   context "when resource_owner cannot access client application" do
     before { allow(Doorkeeper.configuration).to receive(:authorize_resource_owner_for_client).and_return(->(*_) { false }) }
 
