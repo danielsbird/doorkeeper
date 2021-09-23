@@ -38,7 +38,7 @@ module Doorkeeper
       end
 
       def redirect_uri
-        uri = pre_auth.redirect_uri.blank? ? pre_auth.client.redirect_uri : pre_auth.redirect_uri
+        uri = pre_auth.redirect_uri.presence || pre_auth.client.redirect_uri
 
         if URIChecker.oob_uri?(uri)
           auth.oob_redirect

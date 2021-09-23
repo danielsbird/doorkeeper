@@ -82,13 +82,11 @@ module Doorkeeper
         #     values MUST be identical.
         #
         # @see https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.3
-        if redirect_uri.blank? && grant.redirect_uri.blank?
-          return true
-        end
+        return true if redirect_uri.blank? && grant.redirect_uri.blank?
 
         Helpers::URIChecker.valid_for_authorization?(
           redirect_uri,
-          grant.redirect_uri.present? ? grant.redirect_uri : client.redirect_uri,
+          grant.redirect_uri.presence || client.redirect_uri,
         )
       end
 
