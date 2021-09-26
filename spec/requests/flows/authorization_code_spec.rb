@@ -24,18 +24,33 @@ feature "Authorization Code Flow" do
     url_should_not_have_param("error")
   end
 
-  scenario "resource owner authorizes the client without redirect URI provided" do
-    visit "/oauth/authorize?client_id=#{@client.uid}&response_type=code"
+  context "when configured so that redirect uri is required during authorization" do
+    scenario "displays invalid_redirect_uri error when redirect_uri is missing" do
+      visit "/oauth/authorize?client_id=#{@client.uid}&response_type=code"
 
-    click_on "Authorize"
+      i_should_not_see("Authorize")
+      i_should_see_translated_error_message(:invalid_redirect_uri)
+    end
+  end
 
-    access_grant_should_exist_for(@client, @resource_owner)
+  context "when configured so that redirect uri is optional during authorization" do
+    before do
+      config_is_set(:redirect_uri_optional_during_authorization, true)
+    end
 
-    i_should_be_on_client_callback(@client)
+    scenario "resource owner authorizes the client without redirect URI provided" do
+      visit "/oauth/authorize?client_id=#{@client.uid}&response_type=code"
 
-    url_should_have_param("code", Doorkeeper::AccessGrant.first.token)
-    url_should_not_have_param("state")
-    url_should_not_have_param("error")
+      click_on "Authorize"
+
+      access_grant_should_exist_for(@client, @resource_owner)
+
+      i_should_be_on_client_callback(@client)
+
+      url_should_have_param("code", Doorkeeper::AccessGrant.first.token)
+      url_should_not_have_param("state")
+      url_should_not_have_param("error")
+    end
   end
 
   context "when configured to check application supported grant flow" do

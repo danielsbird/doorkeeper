@@ -174,6 +174,12 @@ RSpec.describe Doorkeeper::OAuth::AuthorizationCodeRequest do
   end
 
   context "when the grant's redirect_uri is blank" do
+    before do
+      Doorkeeper.configure do
+        redirect_uri_optional_during_authorization true
+      end
+    end
+
     let(:grant) do
       FactoryBot.create :access_grant,
                         redirect_uri: nil,
